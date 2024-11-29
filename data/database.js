@@ -41,14 +41,25 @@ async function getById(tableName, id) {
 }
 
 async function insertOne(tableName, data) {
-  try {
-    const [result] = await pool.query(`INSERT INTO ?? SET ?`, [tableName, data]);
-    return result.insertId;
-  } catch (error) {
-    console.error(`Erreur lors de l'insertion dans ${tableName}:`, error.message);
-    throw error;
+    try {
+      const [existing] = await pool.query(
+        `SELECT COUNT(*) AS count FROM ?? WHERE email = ?`,
+        [tableName, data.email]
+      );
+      
+      if (existing[0].count > 0) {
+        console.log(`L'email ${data.email} existe déjà.`);
+        return null;
+      }
+  
+      const [result] = await pool.query(`INSERT INTO ?? SET ?`, [tableName, data]);
+      return result.insertId;
+    } catch (error) {
+      console.error(`Erreur lors de l'insertion dans ${tableName}:`, error.message);
+      throw error;
+    }
   }
-}
+  
 
 async function updateOne(tableName, id, data) {
   try {
@@ -97,4 +108,5 @@ module.exports = {
   updateOne,
   deleteOne,
   search,
+  pool,
 };
